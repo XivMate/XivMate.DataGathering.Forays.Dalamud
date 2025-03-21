@@ -1,9 +1,12 @@
-﻿using Dalamud.Game.Command;
+﻿using System.IO;
+using Dalamud.Game.Command;
+using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using Microsoft.Extensions.DependencyInjection;
+using SamplePlugin.Gathering.Fate;
+using SamplePlugin.Services;
 using SamplePlugin.Windows;
 
 namespace SamplePlugin;
@@ -16,12 +19,15 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IFateTable FateTable { get; private set; } = null!;
+    [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
-    private const string CommandName = "/pmycommand";
+    private const string CommandName = "/xivmate";
 
     public Configuration Configuration { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("SamplePlugin");
+    public readonly WindowSystem WindowSystem = new("XivMate");
+    private ServiceProvider provider;
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
@@ -40,23 +46,42 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "Open XivMate main window"
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
 
         // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        // Add a simple message to the log with level set to information
-        // Use /xllog to open the log window in-game
-        // Example Output: 00:57:54.959 | INF | [SamplePlugin] ===A cool log message from Sample Plugin===
-        Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
+        GenerateDependencyInjection();
+
     }
+
+    private void GenerateDependencyInjection()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(this);
+        services.AddSingleton(TextureProvider);
+        services.AddSingleton(PluginInterface);
+        services.AddSingleton(CommandManager);
+        services.AddSingleton(ClientState);
+        services.AddSingleton(DataManager);
+        services.AddSingleton(Framework);
+        services.AddSingleton(FateTable);
+        services.AddSingleton(Log);
+        services.AddSingleton<FateModule>();
+        services.AddSingleton<SchedulerService>();
+        services.AddSingleton<TerritoryService>();
+        provider = services.BuildServiceProvider();
+        var fateModule = provider.GetRequiredService<FateModule>();
+        fateModule.Enable();
+        
+    }
+
 
     public void Dispose()
     {
@@ -66,6 +91,8 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+        provider.Dispose();
+        
     }
 
     private void OnCommand(string command, string args)
