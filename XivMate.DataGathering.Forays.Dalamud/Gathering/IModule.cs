@@ -4,5 +4,6 @@ namespace XivMate.DataGathering.Forays.Dalamud.Gathering;
 
 public interface IModule : IDisposable
 {
-    void Enable();
+    bool Enabled { get; }
+    void LoadConfig(Configuration configuration);
 }

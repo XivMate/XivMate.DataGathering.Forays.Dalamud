@@ -5,22 +5,40 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
+using XivMate.DataGathering.Forays.Dalamud.Extensions;
+using XivMate.DataGathering.Forays.Dalamud.Gathering;
 using XivMate.DataGathering.Forays.Dalamud.Gathering.Fate;
 using XivMate.DataGathering.Forays.Dalamud.Services;
 using XivMate.DataGathering.Forays.Dalamud.Windows;
+using XivMate.DataGathering.Forays.Dalamud.Windows.Tabs;
 
 namespace XivMate.DataGathering.Forays.Dalamud;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
-    [PluginService] internal static IFateTable FateTable { get; private set; } = null!;
-    [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService]
+    internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+
+    [PluginService]
+    internal static ITextureProvider TextureProvider { get; private set; } = null!;
+
+    [PluginService]
+    internal static ICommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IClientState ClientState { get; private set; } = null!;
+
+    [PluginService]
+    internal static IDataManager DataManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IPluginLog Log { get; private set; } = null!;
+
+    [PluginService]
+    internal static IFateTable FateTable { get; private set; } = null!;
+
+    [PluginService]
+    internal static IFramework Framework { get; private set; } = null!;
 
     private const string CommandName = "/xivmate";
 
@@ -37,12 +55,16 @@ public sealed class Plugin : IDalamudPlugin
 
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
+        var services = ConfigureServices();
+        provider = services.BuildServiceProvider();
+        var modules = provider.GetServices<IModule>();
+        foreach (var module in modules)
+        {
+            module.LoadConfig(Configuration);
+        }
 
-        ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, goatImagePath);
 
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -57,11 +79,14 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        GenerateDependencyInjection();
 
+        var tabs = provider.GetServices<ITab>();
+        ConfigWindow = new ConfigWindow(this, tabs, Log);
+        WindowSystem.AddWindow(ConfigWindow);
+        WindowSystem.AddWindow(MainWindow);
     }
 
-    private void GenerateDependencyInjection()
+    private ServiceCollection ConfigureServices()
     {
         var services = new ServiceCollection();
         services.AddSingleton(this);
@@ -76,10 +101,10 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<FateModule>();
         services.AddSingleton<SchedulerService>();
         services.AddSingleton<TerritoryService>();
-        provider = services.BuildServiceProvider();
-        var fateModule = provider.GetRequiredService<FateModule>();
-        fateModule.Enable();
-        
+        services.AddSingleton<ApiService>();
+        services.AddAllTypesImplementing<ITab>();
+        services.AddAllTypesImplementing<IModule>();
+        return services;
     }
 
 
@@ -92,7 +117,6 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
         provider.Dispose();
-        
     }
 
     private void OnCommand(string command, string args)

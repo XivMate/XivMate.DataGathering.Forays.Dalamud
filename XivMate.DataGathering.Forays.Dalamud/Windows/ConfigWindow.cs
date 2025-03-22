@@ -1,23 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
+using XivMate.DataGathering.Forays.Dalamud.Windows.Tabs;
 
 namespace XivMate.DataGathering.Forays.Dalamud.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
+    private readonly IEnumerable<ITab> tabs;
     private Configuration Configuration;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###With a constant ID")
+    public ConfigWindow(Plugin plugin, IEnumerable<ITab> tabs, IPluginLog log) : base("XivMate Settings")
     {
+        this.tabs = tabs;
+        log.Info($"Config Window has {tabs?.Count()} tabs");
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(232, 90);
+        Size = new Vector2(600, 250);
         SizeCondition = ImGuiCond.Always;
 
         Configuration = plugin.Configuration;
@@ -40,20 +47,24 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        // can't ref a property, so use a local copy
-        var configValue = Configuration.SomePropertyToBeSavedAndWithADefault;
-        if (ImGui.Checkbox("Random Config Bool", ref configValue))
-        {
-            Configuration.SomePropertyToBeSavedAndWithADefault = configValue;
-            // can save immediately on change, if you don't want to provide a "Save and Close" button
-            Configuration.Save();
-        }
-
-        var movable = Configuration.IsConfigWindowMovable;
-        if (ImGui.Checkbox("Movable Config Window", ref movable))
-        {
-            Configuration.IsConfigWindowMovable = movable;
-            Configuration.Save();
-        }
+        ImGui.BeginTabBar("#tabs");
+        foreach(var tab in tabs)
+            tab.DrawTab(Configuration);
+        ImGui.EndTabBar();
+        // // can't ref a property, so use a local copy
+        // var configValue = Configuration.SomePropertyToBeSavedAndWithADefault;
+        // if (ImGui.Checkbox("Random Config Bool", ref configValue))
+        // {
+        //     Configuration.SomePropertyToBeSavedAndWithADefault = configValue;
+        //     // can save immediately on change, if you don't want to provide a "Save and Close" button
+        //     Configuration.Save();
+        // }
+        //
+        // var movable = Configuration.IsConfigWindowMovable;
+        // if (ImGui.Checkbox("Movable Config Window", ref movable))
+        // {
+        //     Configuration.IsConfigWindowMovable = movable;
+        //     Configuration.Save();
+        // }
     }
 }

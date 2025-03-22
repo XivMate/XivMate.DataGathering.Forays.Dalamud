@@ -22,6 +22,33 @@ public class SchedulerService(IFramework framework, IPluginLog log) : IDisposabl
             ThreadLoop = threadLoop
         });
     }
+    
+    public void ScheduleOnNewThread(Action action, int intervalMs)
+    {
+        if (threads.ContainsKey(action)) throw new Exception("Thread already exists");
+
+        var threadLoop = new ThreadLoop();
+        threadLoop.Start(action.Invoke, intervalMs);
+        log.Info("Started threadloop for " + action.Method.Name);
+        threads.Add(action, new ThreadLoopData()
+        {
+            ThreadLoop = threadLoop
+        });
+    }
+
+    public void CancelScheduledTask(Action action)
+    {
+        if (threads.TryGetValue(action, out var loopData))
+        {
+            loopData.ThreadLoop.Stop();
+            threads.Remove(action);
+            log.Info("Stopped threadloop for " + action.Method.Name);
+        }
+        else
+        {
+            log.Info("Couldn't find threadloop for: " + action.Method.Name);
+        }
+    }
 
     public void Dispose()
     {

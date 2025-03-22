@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Fates;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Newtonsoft.Json;
 using XivMate.DataGathering.Forays.Dalamud.Extensions;
 using XivMate.DataGathering.Forays.Dalamud.Services;
 
@@ -17,15 +21,17 @@ public class FateModule : IModule
     private readonly SchedulerService schedulerService;
     private readonly TerritoryService territoryService;
     private readonly IPluginLog log;
-    private static ReaderWriterLock? RwLock = null!;
+    private readonly ApiService apiService;
     private bool isInRecordableTerritory = false;
     private Guid instanceGuid = Guid.NewGuid();
     private Dictionary<uint, Models.Fate> fates = new();
+    private ConcurrentQueue<Models.Fate> fateQueue = new();
 
     public FateModule(
         IClientState clientState, IFateTable fateTable,
         IFramework framework, SchedulerService schedulerService,
-        TerritoryService territoryService, IPluginLog log)
+        TerritoryService territoryService, IPluginLog log,
+        ApiService apiService)
     {
         this.clientState = clientState;
         this.fateTable = fateTable;
@@ -33,17 +39,7 @@ public class FateModule : IModule
         this.schedulerService = schedulerService;
         this.territoryService = territoryService;
         this.log = log;
-
-        RwLock ??= new ReaderWriterLock();
-    }
-
-
-    public void Enable()
-    {
-        clientState.TerritoryChanged += OnTerritoryChanged;
-        schedulerService.ScheduleOnFrameworkThread(FateTick, 5000);
-
-        OnTerritoryChanged(clientState.TerritoryType);
+        this.apiService = apiService;
     }
 
     private void FateTick()
@@ -53,79 +49,63 @@ public class FateModule : IModule
             return;
         }
 
-        foreach (var fate in fateTable)
+
+        try
         {
-            if (fates.TryGetValue(fate.FateId, out var modelFate))
+            foreach (var fate in fateTable)
             {
-                // Update existing fate
-                if (fate.State is FateState.Ended or FateState.Failed)
+                if (fates.TryGetValue(fate.FateId, out var modelFate))
                 {
-                    fates.Remove(modelFate.Id);
-                    modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
-                    log.Info($"Fate ended: {fate.Name}, at: {modelFate.EndedAt}");
+                    // Update existing fate
+                    if (fate.State is FateState.Ended or FateState.Failed)
+                    {
+                        fates.Remove(modelFate.Id);
+                        modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
+                        fateQueue.Enqueue(modelFate);
+                        log.Info($"Fate ended: {fate.Name}, at: {modelFate.EndedAt}");
+                        log.Info(JsonConvert.SerializeObject(modelFate));
+                    }
+                }
+                else if (fate.State is FateState.Running)
+                {
+                    // Add new fate
+                    log.Info(
+                        $"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}, position: {fate.Position}, status: {fate.State.ToString()}");
+                    modelFate = new Models.Fate()
+                    {
+                        Name = fate.Name.ToString(),
+                        Id = fate.FateId,
+                        Position = fate.Position,
+                        StartedAt = fate.StartTimeEpoch,
+                        InstanceId = instanceGuid,
+                    };
+
+                    fates.Add(fate.FateId, modelFate);
                 }
             }
-            else
-            {
-                // Add new fate
-                log.Info($"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}, position: {fate.Position}");
-                modelFate = new Models.Fate()
-                {
-                    Name = fate.Name.ToString(),
-                    Id = fate.FateId,
-                    Position = fate.Position,
-                    StartedAt = fate.StartTimeEpoch,
-                    InstanceId = instanceGuid
-                };
 
-                fates.Add(fate.FateId, modelFate);
+            var removedFates = fates.Where(recordedFate =>
+                                               fateTable.All(existingFate => existingFate.FateId != recordedFate.Key));
+            foreach (var removedFate in removedFates)
+            {
+                fates.Remove(removedFate.Value.Id);
+                removedFate.Value.EndedAt = DateTime.UtcNow.ToUnixTime();
+                log.Info($"Fate removed: {removedFate.Value.Name}, at: {removedFate.Value.EndedAt}");
+                log.Info(JsonConvert.SerializeObject(removedFate.Value));
+                fateQueue.Enqueue(removedFate.Value);
             }
         }
-
-        var removedFates = fates.Where(recordedFate =>
-                                           fateTable.All(existingFate => existingFate.FateId != recordedFate.Key));
-        foreach (var removedFate in removedFates)
+        catch (Exception)
         {
-            fates.Remove(removedFate.Value.Id);
-            removedFate.Value.EndedAt = DateTime.UtcNow.ToUnixTime();
-            log.Info($"Fate removed: {removedFate.Value.Name}, at: {removedFate.Value.EndedAt}");
+            throw;
         }
-        // Alert removed any fates not in table
-        //log.Error("Fate found in game FateTable but not local variable", fates);
     }
 
     public void Dispose()
     {
         clientState.TerritoryChanged -= OnTerritoryChanged;
-        // Release any acquired reader locks
-        try
-        {
-            if (RwLock is { IsReaderLockHeld: true })
-            {
-                RwLock.ReleaseLock();
-            }
-        }
-        catch (ApplicationException)
-        {
-            // Handle case where the lock might be in an inconsistent state
-        }
-
-        // Release any acquired writer locks
-        try
-        {
-            if (RwLock is { IsWriterLockHeld: true })
-            {
-                RwLock.ReleaseWriterLock();
-            }
-        }
-        catch (ApplicationException)
-        {
-            // Handle case where the lock might be in an inconsistent state
-        }
-
-        // Allow the lock to be garbage collected
-        RwLock = null;
-
+        schedulerService.CancelScheduledTask(FateTick);
+        schedulerService.CancelScheduledTask(FateUpload);
         GC.SuppressFinalize(this);
     }
 
@@ -137,14 +117,54 @@ public class FateModule : IModule
             territory.PlaceName.Value.Name.ToString().Contains("Zadnor") ||
             territory.PlaceName.Value.Name.ToString().Contains("Bozjan Southern Front"))
         {
-            log.Info($"Foray territory: {territory.PlaceName.Value.Name}");
             isInRecordableTerritory = true;
             instanceGuid = Guid.NewGuid();
+            log.Info($"Foray territory: {territory.PlaceName.Value.Name}, local guid: {instanceGuid}");
         }
         else
         {
             log.Info($"Not Foray territory: {territory.PlaceName.Value.Name}");
             isInRecordableTerritory = false;
+        }
+    }
+
+    public bool Enabled { get; private set; } = false;
+    public IEnumerable<Models.Fate> ActiveFates => fates.Values.ToList();
+
+    public void LoadConfig(Configuration configuration)
+    {
+        if (configuration.FateConfiguration.Enabled && !Enabled)
+        {
+            clientState.TerritoryChanged += OnTerritoryChanged;
+            schedulerService.ScheduleOnFrameworkThread(FateTick, 500);
+            schedulerService.ScheduleOnNewThread(FateUpload, 2500);
+            OnTerritoryChanged(clientState.TerritoryType);
+            Enabled = true;
+            fates.Clear();
+        }
+        else if (Enabled && !configuration.FateConfiguration.Enabled)
+        {
+            clientState.TerritoryChanged -= OnTerritoryChanged;
+            schedulerService.CancelScheduledTask(FateTick);
+            schedulerService.CancelScheduledTask(FateUpload);
+            
+            Enabled = false;
+        }
+    }
+
+    private void FateUpload()
+    {
+        if (fateQueue.TryDequeue(out var fate))
+        {
+            try
+            {
+                apiService.UploadFate(fate).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                fateQueue.Enqueue(fate);
+                log.Warning($"Error uploading {fate.Name}: {ex.Message}");
+            }
         }
     }
 }
