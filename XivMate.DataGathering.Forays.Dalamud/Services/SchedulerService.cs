@@ -22,7 +22,7 @@ public class SchedulerService(IFramework framework, IPluginLog log) : IDisposabl
             ThreadLoop = threadLoop
         });
     }
-    
+
     public void ScheduleOnNewThread(Action action, int intervalMs)
     {
         if (threads.ContainsKey(action)) throw new Exception("Thread already exists");

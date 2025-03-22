@@ -48,7 +48,7 @@ public class ConfigWindow : Window, IDisposable
     public override void Draw()
     {
         ImGui.BeginTabBar("#tabs");
-        foreach(var tab in tabs)
+        foreach (var tab in tabs)
             tab.DrawTab(Configuration);
         ImGui.EndTabBar();
         // // can't ref a property, so use a local copy

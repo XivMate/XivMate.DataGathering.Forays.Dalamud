@@ -16,14 +16,14 @@ public class SystemTab : ITab
     void ITab.Draw(Configuration configuration)
     {
         var sysConfig = configuration.SystemConfiguration;
-        
+
         var apiUrl = sysConfig.ApiUrl;
         if (ImGuiHelper.InputText("Api URL:", ref apiUrl))
         {
             sysConfig.ApiUrl = apiUrl;
             configuration.Save();
         }
-        
+
         var apiKey = sysConfig.ApiKey;
         if (ImGuiHelper.InputText("Api Key:", ref apiKey))
         {

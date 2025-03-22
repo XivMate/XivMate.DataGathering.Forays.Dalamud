@@ -147,7 +147,7 @@ public class FateModule : IModule
             clientState.TerritoryChanged -= OnTerritoryChanged;
             schedulerService.CancelScheduledTask(FateTick);
             schedulerService.CancelScheduledTask(FateUpload);
-            
+
             Enabled = false;
         }
     }
