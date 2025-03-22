@@ -2,45 +2,34 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Fates;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Newtonsoft.Json;
 using XivMate.DataGathering.Forays.Dalamud.Extensions;
 using XivMate.DataGathering.Forays.Dalamud.Services;
 
 namespace XivMate.DataGathering.Forays.Dalamud.Gathering.Fate;
 
-public class FateModule : IModule
+public class FateModule(
+    IClientState clientState,
+    IFateTable fateTable,
+    IFramework framework,
+    SchedulerService schedulerService,
+    TerritoryService territoryService,
+    IPluginLog log,
+    ApiService apiService)
+    : IModule
 {
-    private readonly IClientState clientState;
-    private readonly IFateTable fateTable;
-    private readonly IFramework framework;
-    private readonly SchedulerService schedulerService;
-    private readonly TerritoryService territoryService;
-    private readonly IPluginLog log;
-    private readonly ApiService apiService;
+    private readonly IFramework framework = framework;
     private bool isInRecordableTerritory = false;
     private Guid instanceGuid = Guid.NewGuid();
     private Dictionary<uint, Models.Fate> fates = new();
     private ConcurrentQueue<Models.Fate> fateQueue = new();
-
-    public FateModule(
-        IClientState clientState, IFateTable fateTable,
-        IFramework framework, SchedulerService schedulerService,
-        TerritoryService territoryService, IPluginLog log,
-        ApiService apiService)
-    {
-        this.clientState = clientState;
-        this.fateTable = fateTable;
-        this.framework = framework;
-        this.schedulerService = schedulerService;
-        this.territoryService = territoryService;
-        this.log = log;
-        this.apiService = apiService;
-    }
 
     private void FateTick()
     {
@@ -49,24 +38,18 @@ public class FateModule : IModule
             return;
         }
 
-
         try
         {
             foreach (var fate in fateTable)
             {
                 if (fates.TryGetValue(fate.FateId, out var modelFate))
                 {
-                    // Update existing fate
                     if (fate.State is FateState.Ended or FateState.Failed)
                     {
-                        fates.Remove(modelFate.Id);
-                        modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
-                        fateQueue.Enqueue(modelFate);
-                        log.Info($"Fate ended: {fate.Name}, at: {modelFate.EndedAt}");
-                        log.Info(JsonConvert.SerializeObject(modelFate));
+                        RemoveFate(modelFate);
                     }
                 }
-                else if (fate.State is FateState.Running)
+                else if (fate.State is FateState.Running && fate.StartTimeEpoch > 0 && fate.Position != Vector3.Zero)
                 {
                     // Add new fate
                     log.Info(
@@ -78,6 +61,7 @@ public class FateModule : IModule
                         Position = fate.Position,
                         StartedAt = fate.StartTimeEpoch,
                         InstanceId = instanceGuid,
+                        TerritoryType = clientState.TerritoryType
                     };
 
                     fates.Add(fate.FateId, modelFate);
@@ -88,17 +72,25 @@ public class FateModule : IModule
                                                fateTable.All(existingFate => existingFate.FateId != recordedFate.Key));
             foreach (var removedFate in removedFates)
             {
-                fates.Remove(removedFate.Value.Id);
-                removedFate.Value.EndedAt = DateTime.UtcNow.ToUnixTime();
-                log.Info($"Fate removed: {removedFate.Value.Name}, at: {removedFate.Value.EndedAt}");
-                log.Info(JsonConvert.SerializeObject(removedFate.Value));
-                fateQueue.Enqueue(removedFate.Value);
+                RemoveFate(removedFate.Value);
             }
         }
         catch (Exception)
         {
             throw;
         }
+    }
+
+    private void RemoveFate(Models.Fate modelFate)
+    {
+        fates.Remove(modelFate.Id);
+        modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
+        if (modelFate.TerritoryType == clientState.TerritoryType)
+            fateQueue.Enqueue(modelFate);
+        log.Info($"Fate ended: {modelFate.Name}, at: {modelFate.EndedAt}");
+        log.Info(
+            $"#1 - Fate ended territoryid {modelFate.TerritoryType}, client territory: {clientState.TerritoryType}, client map: {clientState.MapId}");
+        log.Info(JsonConvert.SerializeObject(modelFate));
     }
 
     public void Dispose()
@@ -113,17 +105,18 @@ public class FateModule : IModule
     private void OnTerritoryChanged(ushort obj)
     {
         var territory = territoryService.GetTerritoryForId(obj);
-        if (territory.PlaceName.Value.Name.ToString().Contains("Eureka") ||
-            territory.PlaceName.Value.Name.ToString().Contains("Zadnor") ||
-            territory.PlaceName.Value.Name.ToString().Contains("Bozjan Southern Front"))
+        if (territory.HasValue && (territory.Value.PlaceName.Value.Name.ToString().Contains("Eureka") ||
+                                   territory.Value.PlaceName.Value.Name.ToString().Contains("Zadnor") ||
+                                   territory.Value.PlaceName.Value.Name.ToString().Contains("Bozjan Southern Front")))
         {
             isInRecordableTerritory = true;
             instanceGuid = Guid.NewGuid();
-            log.Info($"Foray territory: {territory.PlaceName.Value.Name}, local guid: {instanceGuid}");
+            log.Info($"Foray territory: {territory.Value.PlaceName.Value.Name}, local guid: {instanceGuid}");
         }
         else
         {
-            log.Info($"Not Foray territory: {territory.PlaceName.Value.Name}");
+            if (territory.HasValue)
+                log.Info($"Not Foray territory: {territory.Value.PlaceName.Value.Name}");
             isInRecordableTerritory = false;
         }
     }

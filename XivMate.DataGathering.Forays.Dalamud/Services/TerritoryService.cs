@@ -26,10 +26,10 @@ public class TerritoryService : IDisposable
         this.dataManager = dataManager;
     }
 
-    public TerritoryType GetTerritoryForId(uint territoryId)
+    public TerritoryType? GetTerritoryForId(uint territoryId)
     {
-        return (TerritoryType)dataManager.GameData.GetExcelSheet<TerritoryType>()
-                                         ?.Single((territory) => territory.RowId == territoryId)!;
+        return dataManager.GameData.GetExcelSheet<TerritoryType>()
+                          ?.FirstOrDefault((territory) => territory.RowId == territoryId)!;
     }
 
     public void Dispose()
