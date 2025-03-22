@@ -57,8 +57,11 @@ public class FateModule(
                     modelFate = new Models.Fate()
                     {
                         Name = fate.Name.ToString(),
-                        Id = fate.FateId,
-                        Position = fate.Position,
+                        FateId = fate.FateId,
+                        X = fate.Position.X,
+                        Y = fate.Position.X,
+                        Z = fate.Position.X,
+                        Radius = fate.Radius,
                         StartedAt = fate.StartTimeEpoch,
                         InstanceId = instanceGuid,
                         TerritoryType = clientState.TerritoryType
@@ -83,7 +86,7 @@ public class FateModule(
 
     private void RemoveFate(Models.Fate modelFate)
     {
-        fates.Remove(modelFate.Id);
+        fates.Remove(modelFate.FateId);
         modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
         if (modelFate.TerritoryType == clientState.TerritoryType)
             fateQueue.Enqueue(modelFate);
@@ -111,7 +114,7 @@ public class FateModule(
         {
             isInRecordableTerritory = true;
             instanceGuid = Guid.NewGuid();
-            log.Info($"Foray territory: {territory.Value.PlaceName.Value.Name}, local guid: {instanceGuid}");
+            log.Info($"Foray territory: {territory.Value.PlaceName.Value.Name}, local guid: {instanceGuid}, local territory {clientState.TerritoryType}, map {clientState.MapId}");
         }
         else
         {
