@@ -1,8 +1,7 @@
-﻿using Dalamud.Configuration;
-using Dalamud.Plugin;
-using System;
+﻿using System;
+using Dalamud.Configuration;
 
-namespace SamplePlugin;
+namespace XivMate.DataGathering.Forays.Dalamud;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

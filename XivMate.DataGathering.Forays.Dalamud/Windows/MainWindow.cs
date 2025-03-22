@@ -6,7 +6,7 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 
-namespace SamplePlugin.Windows;
+namespace XivMate.DataGathering.Forays.Dalamud.Windows;
 
 public class MainWindow : Window, IDisposable
 {

@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading;
 using Dalamud.Game.ClientState.Fates;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
-using SamplePlugin.Extensions;
-using SamplePlugin.Services;
+using XivMate.DataGathering.Forays.Dalamud.Extensions;
+using XivMate.DataGathering.Forays.Dalamud.Services;
 
-namespace SamplePlugin.Gathering.Fate;
+namespace XivMate.DataGathering.Forays.Dalamud.Gathering.Fate;
 
 public class FateModule : IModule
 {
@@ -20,7 +19,7 @@ public class FateModule : IModule
     private readonly IPluginLog log;
     private static ReaderWriterLock? RwLock = null!;
     private bool isInRecordableTerritory = false;
-
+    private Guid instanceGuid = Guid.NewGuid();
     private Dictionary<uint, Models.Fate> fates = new();
 
     public FateModule(
@@ -54,11 +53,9 @@ public class FateModule : IModule
             return;
         }
 
-
         foreach (var fate in fateTable)
         {
-            Models.Fate? modelFate;
-            if (fates.TryGetValue(fate.FateId, out modelFate))
+            if (fates.TryGetValue(fate.FateId, out var modelFate))
             {
                 // Update existing fate
                 if (fate.State is FateState.Ended or FateState.Failed)
@@ -71,13 +68,14 @@ public class FateModule : IModule
             else
             {
                 // Add new fate
-                log.Info($"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}");
+                log.Info($"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}, position: {fate.Position}");
                 modelFate = new Models.Fate()
                 {
                     Name = fate.Name.ToString(),
                     Id = fate.FateId,
                     Position = fate.Position,
                     StartedAt = fate.StartTimeEpoch,
+                    InstanceId = instanceGuid
                 };
 
                 fates.Add(fate.FateId, modelFate);
@@ -91,7 +89,6 @@ public class FateModule : IModule
             fates.Remove(removedFate.Value.Id);
             removedFate.Value.EndedAt = DateTime.UtcNow.ToUnixTime();
             log.Info($"Fate removed: {removedFate.Value.Name}, at: {removedFate.Value.EndedAt}");
-
         }
         // Alert removed any fates not in table
         //log.Error("Fate found in game FateTable but not local variable", fates);
@@ -136,14 +133,17 @@ public class FateModule : IModule
     private void OnTerritoryChanged(ushort obj)
     {
         var territory = territoryService.GetTerritoryForId(obj);
-        if (territory?.PlaceName.Value.Name.ToString()?.Contains("Eureka") ?? false)
+        if (territory.PlaceName.Value.Name.ToString().Contains("Eureka") ||
+            territory.PlaceName.Value.Name.ToString().Contains("Zadnor") ||
+            territory.PlaceName.Value.Name.ToString().Contains("Bozjan Southern Front"))
         {
-            log.Info($"Eureka territory: {territory?.PlaceName.Value.Name}");
+            log.Info($"Foray territory: {territory.PlaceName.Value.Name}");
             isInRecordableTerritory = true;
+            instanceGuid = Guid.NewGuid();
         }
         else
         {
-            if (territory != null) log.Info($"Not Eureka territory: {territory?.PlaceName.Value.Name}");
+            log.Info($"Not Foray territory: {territory.PlaceName.Value.Name}");
             isInRecordableTerritory = false;
         }
     }

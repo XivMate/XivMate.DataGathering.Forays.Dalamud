@@ -1,6 +1,6 @@
 using System;
 
-namespace SamplePlugin.Extensions;
+namespace XivMate.DataGathering.Forays.Dalamud.Extensions;
 
 public static class DateTimeExtensions
 {

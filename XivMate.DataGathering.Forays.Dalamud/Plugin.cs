@@ -5,11 +5,11 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
-using SamplePlugin.Gathering.Fate;
-using SamplePlugin.Services;
-using SamplePlugin.Windows;
+using XivMate.DataGathering.Forays.Dalamud.Gathering.Fate;
+using XivMate.DataGathering.Forays.Dalamud.Services;
+using XivMate.DataGathering.Forays.Dalamud.Windows;
 
-namespace SamplePlugin;
+namespace XivMate.DataGathering.Forays.Dalamud;
 
 public sealed class Plugin : IDalamudPlugin
 {

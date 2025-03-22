@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Plugin.Services;
 
-namespace SamplePlugin.Services;
+namespace XivMate.DataGathering.Forays.Dalamud.Services;
 
 public class SchedulerService(IFramework framework, IPluginLog log) : IDisposable
 {
