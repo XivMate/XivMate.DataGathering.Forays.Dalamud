@@ -53,37 +53,47 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-        var services = ConfigureServices();
-        provider = services.BuildServiceProvider();
-        var modules = provider.GetServices<IModule>();
-        foreach (var module in modules)
-        {
-            module.LoadConfig(Configuration);
-        }
+        var resourcesPath = PluginInterface.AssemblyLocation.Directory?.FullName!;
+        var goatImagePath = Path.Combine(resourcesPath, "goat.png");
+
+        SetupServices();
+        InitializeModules();
 
         MainWindow = new MainWindow(this, goatImagePath);
 
-
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "Open XivMate main window"
-        });
+        RegisterCommands();
 
         PluginInterface.UiBuilder.Draw += DrawUI;
-
-        // This adds a button to the plugin installer entry of this plugin which allows
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-
-        // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-
 
         var tabs = provider.GetServices<ITab>();
         ConfigWindow = new ConfigWindow(this, tabs, Log);
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
+    }
+
+    private void SetupServices()
+    {
+        var services = ConfigureServices();
+        provider = services.BuildServiceProvider();
+    }
+
+    private void InitializeModules()
+    {
+        var modules = provider.GetServices<IModule>();
+        foreach (var module in modules)
+        {
+            module.LoadConfig(Configuration);
+        }
+    }
+
+    private void RegisterCommands()
+    {
+        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Open XivMate main window"
+        });
     }
 
     private ServiceCollection ConfigureServices()
