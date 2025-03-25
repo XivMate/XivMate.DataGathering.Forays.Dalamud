@@ -29,18 +29,18 @@ jobs:
             - name: write version into json
               run: |
                   $ver = '${{ github.ref_name }}' -replace 'testing_'
-                  $path = './XivMate.DataGathering.Forays.Dalamud/bin/Debug/XivMate.DataGathering.Forays.Dalamud.json'
+                  $path = './XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/XivMate.DataGathering.Forays.Dalamud.json'
                   $json = Get-Content -Raw $path | ConvertFrom-Json
                   $json.AssemblyVersion = $ver
                   $content = $json | ConvertTo-Json
                   set-content -Path $path -Value $content
             - name: Archive
-              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/Debug/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
+              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
                   path: |
-                      ./XivMate.DataGathering.Forays.Dalamud/bin/Debug/*
+                      ./XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/*
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1

@@ -27,9 +27,9 @@ jobs:
               run: |
                   dotnet build --no-restore --configuration Release --nologo
             - name: Archive
-              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/Release/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
+              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/x64/Release/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
                   path: |
-                      ./XivMate.DataGathering.Forays.Dalamud/bin/Release/*
+                      ./XivMate.DataGathering.Forays.Dalamud/bin/x64/Release/*

@@ -35,12 +35,12 @@ jobs:
                   $content = $json | ConvertTo-Json
                   set-content -Path $path -Value $content
             - name: Archive
-              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/Release/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
+              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/x64/Release/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
                   path: |
-                      ./XivMate.DataGathering.Forays.Dalamud/bin/Release/*
+                      ./XivMate.DataGathering.Forays.Dalamud/bin/x64/Release/*
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1
