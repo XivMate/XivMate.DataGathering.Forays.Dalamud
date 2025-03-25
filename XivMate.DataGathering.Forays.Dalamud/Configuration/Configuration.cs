@@ -3,25 +3,44 @@ using Dalamud.Configuration;
 
 namespace XivMate.DataGathering.Forays.Dalamud;
 
+/// <summary>
+/// Main plugin configuration
+/// </summary>
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    /// <summary>
+    /// Configuration version
+    /// </summary>
     public int Version { get; set; } = 0;
 
-    public bool IsConfigWindowMovable { get; set; } = true;
-    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
-
+    /// <summary>
+    /// System-related configuration
+    /// </summary>
     public SystemConfiguration SystemConfiguration { get; set; } = new();
+
+    /// <summary>
+    /// FATE tracking configuration
+    /// </summary>
     public FateConfiguration FateConfiguration { get; set; } = new();
 
-    // the below exist just to make saving less cumbersome
+    /// <summary>
+    /// Saves the configuration
+    /// </summary>
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);
     }
 }
 
+/// <summary>
+/// Configuration for FATE tracking module
+/// </summary>
+[Serializable]
 public class FateConfiguration
 {
+    /// <summary>
+    /// Whether FATE tracking is enabled
+    /// </summary>
     public bool Enabled { get; set; } = false;
 }

@@ -1,19 +1,21 @@
-using Dalamud.Interface.Utility;
 using ImGuiNET;
 using XivMate.DataGathering.Forays.Dalamud.Extensions;
 
-
 namespace XivMate.DataGathering.Forays.Dalamud.Windows.Tabs;
 
+/// <summary>
+/// Tab for system configuration settings
+/// </summary>
 public class SystemTab : ITab
 {
-    // public int Index { get; set; } = 999;
-    // public string TabTitle { get; set; } = "System";
-
+    /// <inheritdoc />
     public int Index => 999;
+
+    /// <inheritdoc />
     public string TabTitle => "System";
 
-    void ITab.Draw(Configuration configuration)
+    /// <inheritdoc />
+    public void Draw(Configuration configuration)
     {
         var sysConfig = configuration.SystemConfiguration;
 

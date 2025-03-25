@@ -4,16 +4,24 @@ using XivMate.DataGathering.Forays.Dalamud.Gathering.Fate;
 
 namespace XivMate.DataGathering.Forays.Dalamud.Windows.Tabs;
 
+/// <summary>
+/// Tab for FATE tracking configuration and status display
+/// </summary>
 public class FateTab(FateModule fateModule) : ITab
 {
-    public int Index { get; } = 1;
+    /// <inheritdoc />
+    public int Index => 1;
+    
+    /// <inheritdoc />
     public string TabTitle => "Fates";
 
+    /// <inheritdoc />
     public void Draw(Configuration configuration)
     {
         ImGui.Text("Check fates");
         ImGui.SameLine();
-        var fateConfigurationEnabled = configuration.FateConfiguration.Enabled;
+        
+        bool fateConfigurationEnabled = configuration.FateConfiguration.Enabled;
         if (ImGui.Checkbox("##Track Fates", ref fateConfigurationEnabled))
         {
             configuration.FateConfiguration.Enabled = fateConfigurationEnabled;
@@ -26,6 +34,7 @@ public class FateTab(FateModule fateModule) : ITab
             return;
         }
 
-        ImGui.Text($"Fates on map: {fateModule.ActiveFates.Count()}##{fateModule.ActiveFates.Count()}");
+        int fateCount = fateModule.ActiveFates.Count();
+        ImGui.Text($"Fates on map: {fateCount}##{fateCount}");
     }
 }
