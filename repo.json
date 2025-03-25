@@ -1,0 +1,25 @@
+[
+    {
+        "Author": "XivForays",
+        "Name": "XivMate.DataGathering.Forays.Dalamud",
+        "Punchline": "Foray stuff.",
+        "Description": "Foray stuff.",
+        "InternalName": "XivMate.DataGathering.Forays.Dalamud",
+        "AssemblyVersion": "0.0.0.1",
+        "TestingAssemblyVersion": "0.0.0.1",
+        "RepoUrl": "https://dev.azure.com/hamgooof/XivMate/_git/XivMate.DataGathering.Forays.Dalamud",
+        "ApplicableVersion": "any",
+        "DalamudApiLevel": 11,
+        "TestingDalamudApiLevel": 11,
+        "IsHide": "False",
+        "IsTestingExclusive": "False",
+        "DownloadCount": 0,
+        "LastUpdate": 0,
+        "LoadPriority": 100,
+        "LoadRequiredState": 2,
+        "LoadSync": true,
+        "DownloadLinkInstall": "https://github.com/XivMate/XivMate.DataGathering.Forays.Dalamud/releases/download/0.0.0.1/XivMate.DataGathering.Forays.Dalamud.zip",
+        "DownloadLinkTesting": "https://github.com/XivMate/XivMate.DataGathering.Forays.Dalamud/releases/download/0.0.0.1/XivMate.DataGathering.Forays.Dalamud.zip",
+        "DownloadLinkUpdate": "https://github.com/XivMate/XivMate.DataGathering.Forays.Dalamud/releases/download/0.0.0.1/XivMate.DataGathering.Forays.Dalamud.zip"
+    }
+]
