@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Newtonsoft.Json;
 using XivMate.DataGathering.Forays.Dalamud.Models;
 
 namespace XivMate.DataGathering.Forays.Dalamud.Services;
@@ -21,6 +22,7 @@ public class ApiService(IDalamudPluginInterface dalamudPluginInterface, IPluginL
         var url = $"{baseUrl}{endpoint}";
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add($"X-API-Key", config.SystemConfiguration.ApiKey);
+        log.Debug($"Sending request to {url} with payload {JsonConvert.SerializeObject(obj)}");
         var result = await client.PostAsJsonAsync(url, obj);
         result.EnsureSuccessStatusCode();
     }

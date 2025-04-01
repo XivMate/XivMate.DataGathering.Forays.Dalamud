@@ -15,6 +15,6 @@ public class Fate
     public int StartedAt { get; set; }
     public long EndedAt { get; set; }
     public Guid InstanceId { get; set; }
-    [JsonIgnore]
-    public ushort TerritoryType { get; set; }
-}
+    public int TerritoryId { get; set; }
+    public int MapId { get; set; }
+    public int LevelId { get; set; }}

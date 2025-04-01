@@ -124,7 +124,7 @@ public class FateModule(
             {
                 // Add new fate
                 log.Info(
-                    $"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}, position: {fate.Position}, status: {fate.State}");
+                    $"New fate found: {fate.Name}, started at: {fate.StartTimeEpoch}, position: {fate.Position}, status: {fate.State}, territory: {fate.TerritoryType.Value.RowId}, map: {clientState.MapId}");
 
                 modelFate = new Models.Fate()
                 {
@@ -136,7 +136,9 @@ public class FateModule(
                     Radius = fate.Radius,
                     StartedAt = fate.StartTimeEpoch,
                     InstanceId = _instanceGuid,
-                    TerritoryType = clientState.TerritoryType
+                    TerritoryId = Convert.ToInt32(fate.TerritoryType.Value.RowId),
+                    MapId = (int)clientState.MapId,
+                    LevelId = fate.Level
                 };
 
                 _fates.Add(fate.FateId, modelFate);
@@ -171,13 +173,13 @@ public class FateModule(
         {
             modelFate.EndedAt = DateTime.UtcNow.ToUnixTime();
 
-            if (modelFate.TerritoryType == clientState.TerritoryType)
+            if (modelFate.TerritoryId == clientState.TerritoryType)
             {
                 _fateQueue.Enqueue(modelFate);
             }
 
             log.Info($"Fate ended: {modelFate.Name}, at: {modelFate.EndedAt}");
-            log.Info($"#1 - Fate ended territoryid {modelFate.TerritoryType}, client territory: {clientState.TerritoryType}, client map: {clientState.MapId}");
+            log.Info($"#1 - Fate ended territoryid {modelFate.TerritoryId}, client territory: {clientState.TerritoryType}, client map: {clientState.MapId}");
             log.Info(JsonConvert.SerializeObject(modelFate));
         }
     }
