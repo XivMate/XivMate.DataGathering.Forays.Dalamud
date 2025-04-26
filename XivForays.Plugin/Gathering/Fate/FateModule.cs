@@ -34,7 +34,7 @@ public class FateModule(
     /// <summary>
     /// Loads configuration and enables/disables the module accordingly
     /// </summary>
-    public void LoadConfig(Configuration configuration)
+    public void LoadConfig(Configuration.Configuration configuration)
     {
         if (configuration.FateConfiguration.Enabled && !_enabled)
         {
@@ -59,19 +59,27 @@ public class FateModule(
     /// </summary>
     private void OnTerritoryChanged(ushort territoryId)
     {
+        if (!clientState.IsLoggedIn)
+        {
+            return;
+        }
+
         var territory = territoryService.GetTerritoryForId(territoryId);
-        if (territory.HasValue)
+        log.Info($"Current territory id is: ", territoryId);
+        log.Info("Territory Placename is : ", territory?.PlaceName.ValueNullable);
+        if (territory?.PlaceName.ValueNullable.HasValue ?? false)
         {
             string territoryName = territory.Value.PlaceName.Value.Name.ToString();
             bool isForayTerritory = territoryName.Contains("Eureka") ||
-                                   territoryName.Contains("Zadnor") ||
-                                   territoryName.Contains("Bozjan Southern Front");
+                                    territoryName.Contains("Zadnor") ||
+                                    territoryName.Contains("Bozjan Southern Front");
 
             if (isForayTerritory)
             {
                 _isInRecordableTerritory = true;
                 _instanceGuid = Guid.NewGuid();
-                log.Info($"Foray territory: {territoryName}, local guid: {_instanceGuid}, local territory {clientState.TerritoryType}, map {clientState.MapId}");
+                log.Info(
+                    $"Foray territory: {territoryName}, local guid: {_instanceGuid}, local territory {clientState.TerritoryType}, map {clientState.MapId}");
             }
             else
             {
@@ -152,8 +160,8 @@ public class FateModule(
     private void RemoveNonExistentFates()
     {
         var fatesToRemove = _fates.Keys
-            .Where(fateId => fateTable.All(existingFate => existingFate.FateId != fateId))
-            .ToList();
+                                  .Where(fateId => fateTable.All(existingFate => existingFate.FateId != fateId))
+                                  .ToList();
 
         foreach (var fateId in fatesToRemove)
         {
@@ -179,7 +187,8 @@ public class FateModule(
             }
 
             log.Info($"Fate ended: {modelFate.Name}, at: {modelFate.EndedAt}");
-            log.Info($"#1 - Fate ended territoryid {modelFate.TerritoryId}, client territory: {clientState.TerritoryType}, client map: {clientState.MapId}");
+            log.Info(
+                $"#1 - Fate ended territoryid {modelFate.TerritoryId}, client territory: {clientState.TerritoryType}, client map: {clientState.MapId}");
             log.Info(JsonConvert.SerializeObject(modelFate));
         }
     }

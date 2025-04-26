@@ -29,18 +29,18 @@ jobs:
             - name: write version into json
               run: |
                   $ver = '${{ github.ref_name }}' -replace 'testing_'
-                  $path = './XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/XivMate.DataGathering.Forays.Dalamud.json'
+                  $path = './XivForays.Plugin/bin/x64/Debug/XivForays.Plugin.json'
                   $json = Get-Content -Raw $path | ConvertFrom-Json
                   $json.AssemblyVersion = $ver
                   $content = $json | ConvertTo-Json
                   set-content -Path $path -Value $content
             - name: Archive
-              run: Compress-Archive -Path XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/* -DestinationPath XivMate.DataGathering.Forays.Dalamud.zip
+              run: Compress-Archive -Path XivForays.Plugin/bin/x64/Debug/* -DestinationPath XivForays.Plugin.zip
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v4
               with:
                   path: |
-                      ./XivMate.DataGathering.Forays.Dalamud/bin/x64/Debug/*
+                      ./XivForays.Plugin/bin/x64/Debug/*
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1
@@ -48,7 +48,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   tag_name: ${{ github.ref }}
-                  release_name: XivMate.DataGathering.Forays.Dalamud ${{ github.ref }}
+                  release_name: XivForays.Plugin ${{ github.ref }}
                   draft: false
                   prerelease: false
             - name: Upload Release Asset
@@ -58,8 +58,8 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-                  asset_path: ./XivMate.DataGathering.Forays.Dalamud.zip
-                  asset_name: XivMate.DataGathering.Forays.Dalamud.zip
+                  asset_path: ./XivForays.Plugin.zip
+                  asset_name: XivForays.Plugin.zip
                   asset_content_type: application/zip
 
             - name: Write out repo.json
@@ -69,7 +69,7 @@ jobs:
                   $path = './repo.json'
                   $json = Get-Content -Raw $path | ConvertFrom-Json
                   $json[0].TestingAssemblyVersion = $ver          
-                  $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/XivMate.DataGathering.Forays.Dalamud.zip',"$verT/XivMate.DataGathering.Forays.Dalamud.zip"
+                  $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/XivForays.Plugin.zip',"$verT/XivForays.Plugin.zip"
                   $content = $json | ConvertTo-Json -AsArray
                   set-content -Path $path -Value $content
 

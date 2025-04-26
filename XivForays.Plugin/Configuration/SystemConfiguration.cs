@@ -1,6 +1,6 @@
 using System;
 
-namespace XivMate.DataGathering.Forays.Dalamud;
+namespace XivMate.DataGathering.Forays.Dalamud.Configuration;
 
 /// <summary>
 /// Configuration for system-wide settings

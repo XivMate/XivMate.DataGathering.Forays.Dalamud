@@ -21,7 +21,7 @@ public interface ITab
     /// Draws the tab and handles ImGui tab wrapping
     /// </summary>
     /// <param name="configuration">Plugin configuration</param>
-    public void DrawTab(Configuration configuration)
+    public void DrawTab(Configuration.Configuration configuration)
     {
         if (ImGui.BeginTabItem(TabTitle))
         {
@@ -34,5 +34,5 @@ public interface ITab
     /// Internal implementation for drawing tab content
     /// </summary>
     /// <param name="configuration">Plugin configuration</param>
-    void Draw(Configuration configuration);
+    void Draw(Configuration.Configuration configuration);
 }

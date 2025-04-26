@@ -15,7 +15,7 @@ public class SystemTab : ITab
     public string TabTitle => "System";
 
     /// <inheritdoc />
-    public void Draw(Configuration configuration)
+    public void Draw(Configuration.Configuration configuration)
     {
         var sysConfig = configuration.SystemConfiguration;
 

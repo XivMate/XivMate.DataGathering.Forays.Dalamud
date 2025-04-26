@@ -12,7 +12,7 @@ namespace XivMate.DataGathering.Forays.Dalamud.Windows;
 public class ConfigWindow : Window, IDisposable
 {
     private readonly IEnumerable<ITab> tabs;
-    private Configuration Configuration;
+    private Configuration.Configuration Configuration;
 
     public ConfigWindow(Plugin plugin, IEnumerable<ITab> tabs, IPluginLog log) : base("XivMate Settings")
     {

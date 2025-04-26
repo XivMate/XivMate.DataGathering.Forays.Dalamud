@@ -15,7 +15,7 @@ public class ApiService(IDalamudPluginInterface dalamudPluginInterface, IPluginL
 {
     private async Task PostRequest<T>(T obj, string endpoint)
     {
-        var config = dalamudPluginInterface.GetPluginConfig() as Configuration;
+        var config = dalamudPluginInterface.GetPluginConfig() as Configuration.Configuration;
         var baseUrl = config.SystemConfiguration.ApiUrl ?? throw new Exception($"Api URL not set");
         if (!baseUrl.EndsWith('/'))
             baseUrl += "/";

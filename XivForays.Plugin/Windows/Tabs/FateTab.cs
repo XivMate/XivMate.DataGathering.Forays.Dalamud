@@ -16,7 +16,7 @@ public class FateTab(FateModule fateModule) : ITab
     public string TabTitle => "Fates";
 
     /// <inheritdoc />
-    public void Draw(Configuration configuration)
+    public void Draw(Configuration.Configuration configuration)
     {
         ImGui.Text("Check fates");
         ImGui.SameLine();

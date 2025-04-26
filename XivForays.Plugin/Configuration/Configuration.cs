@@ -1,7 +1,7 @@
 ﻿using System;
 using Dalamud.Configuration;
 
-namespace XivMate.DataGathering.Forays.Dalamud;
+namespace XivMate.DataGathering.Forays.Dalamud.Configuration;
 
 /// <summary>
 /// Main plugin configuration

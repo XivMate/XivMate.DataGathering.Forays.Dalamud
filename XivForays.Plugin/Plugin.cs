@@ -27,6 +27,8 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService]
     internal static IClientState ClientState { get; private set; } = null!;
+    [PluginService]
+    internal static IChatGui ChatGui { get; private set; } = null!;
 
     [PluginService]
     internal static IDataManager DataManager { get; private set; } = null!;
@@ -42,7 +44,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private const string CommandName = "/xivmate";
 
-    public Configuration Configuration { get; init; }
+    public Configuration.Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new("XivMate");
     private ServiceProvider provider;
@@ -51,15 +53,14 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Configuration = PluginInterface.GetPluginConfig() as Configuration.Configuration ?? new Configuration.Configuration();
 
         var resourcesPath = PluginInterface.AssemblyLocation.Directory?.FullName!;
-        var goatImagePath = Path.Combine(resourcesPath, "goat.png");
 
         SetupServices();
         InitializeModules();
 
-        MainWindow = new MainWindow(this, goatImagePath);
+        MainWindow = new MainWindow(this);
 
         RegisterCommands();
 
@@ -71,6 +72,7 @@ public sealed class Plugin : IDalamudPlugin
         ConfigWindow = new ConfigWindow(this, tabs, Log);
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
+        
     }
 
     private void SetupServices()
@@ -92,7 +94,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Open XivMate main window"
+            HelpMessage = "Open XivForays main window"
         });
     }
 
@@ -101,6 +103,7 @@ public sealed class Plugin : IDalamudPlugin
         var services = new ServiceCollection();
         services.AddSingleton(this);
         services.AddSingleton(TextureProvider);
+        services.AddSingleton(ChatGui);
         services.AddSingleton(PluginInterface);
         services.AddSingleton(CommandManager);
         services.AddSingleton(ClientState);
